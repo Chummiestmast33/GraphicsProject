@@ -49,6 +49,7 @@
     -fx-background-radius: 10;
     -fx-cursor: hand;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 112, 60, 0.4), 15, 0, 0, 5); /* Sombra color verde */
+    -fx-font-size: 18px;
 }
 
 .boton-verde:hover {
