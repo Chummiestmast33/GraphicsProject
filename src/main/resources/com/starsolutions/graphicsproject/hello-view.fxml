@@ -1,16 +1,89 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<?import javafx.scene.control.Button?>
-<VBox alignment="CENTER" spacing="20.0" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.starsolutions.graphicsproject.HelloController">
-    <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
-    </padding>
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="550.0" prefWidth="950.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <AnchorPane layoutX="120.0" layoutY="30.0" prefHeight="490.0" prefWidth="800.0" styleClass="tarjeta-principal">
+         <children>
+            <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="200.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">
+               <children>
+                  <Label text="Nombre de la App: Vivienda">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <Pane HBox.hgrow="ALWAYS" />
+                  <ImageView fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true" />
+               </children>
+               <padding>
+                  <Insets left="20.0" right="20.0" />
+               </padding>
+            </HBox>
 
-    <Label fx:id="welcomeText"/>
-    <Button text="Hello!" onAction="#onHelloButtonClick"/>
-</VBox>
+            <Pane layoutX="20.0" layoutY="73.0" prefHeight="380.0" prefWidth="380.0" styleClass="tarjeta-secundaria" stylesheets="@styles.css" />
+
+            <Pane layoutX="420.0" layoutY="73.0" prefHeight="180.0" prefWidth="370.0" styleClass="tarjeta-secundaria" AnchorPane.rightAnchor="10.0">
+               <children>
+                  <Label layoutX="10.0" layoutY="30.0" text="Datos de la Poblacion:">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <ComboBox layoutX="14.0" layoutY="88.0" prefHeight="30.0" prefWidth="150.0" promptText="Lista de Opciones" stylesheets="@styles.css" />
+                  <Button layoutX="215.0" layoutY="27.0" mnemonicParsing="false" prefHeight="40.0" prefWidth="120.0" styleClass="boton-normal" text="Grafica">
+                     <graphic>
+                        <ImageView fitHeight="25.0" fitWidth="25.0" pickOnBounds="true" preserveRatio="true">
+                           <image>
+                              <Image url="@icons/grafica.png" />
+                           </image></ImageView>
+                     </graphic>
+                  </Button>
+                  <Button layoutX="215.0" layoutY="118.0" mnemonicParsing="false" prefHeight="40.0" prefWidth="120.0" styleClass="boton-normal" text="Excel">
+                     <graphic>
+                        <ImageView fitHeight="25.0" fitWidth="25.0" pickOnBounds="true" preserveRatio="true">
+                           <image>
+                              <Image url="@icons/excel.png" />
+                           </image></ImageView>
+                     </graphic>
+                  </Button>
+               </children>
+            </Pane>
+
+            <Pane layoutX="419.0" layoutY="273.0" prefHeight="180.0" prefWidth="370.0" styleClass="tarjeta-secundaria">
+               <children>
+                  <Button contentDisplay="TOP" layoutX="10.0" layoutY="20.0" mnemonicParsing="false" prefHeight="140.0" prefWidth="350.0" styleClass="boton-verde" text="Previsualizar Impresion">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                     <graphic>
+                        <ImageView fitHeight="80.0" fitWidth="80.0" pickOnBounds="true" preserveRatio="true">
+                           <image>
+                              <Image url="@icons/impresora.png" />
+                           </image></ImageView>
+                     </graphic>
+                  </Button>
+               </children>
+            </Pane>
+         </children>
+      </AnchorPane>
+
+      <VBox layoutX="20.0" layoutY="70.0" prefHeight="400.0" prefWidth="105.0">
+         <children>
+            <ToggleButton mnemonicParsing="false" prefHeight="80.0" prefWidth="105.0" styleClass="boton-menu" text="Seguridad">
+               <toggleGroup>
+                  <ToggleGroup fx:id="groupLateralMenu" />
+               </toggleGroup>
+            </ToggleButton>
+            <ToggleButton layoutX="10.0" layoutY="10.0" mnemonicParsing="false" prefHeight="80.0" prefWidth="105.0" selected="true" styleClass="boton-menu" text="Vivienda" toggleGroup="$groupLateralMenu" />
+            <ToggleButton layoutX="10.0" layoutY="90.0" mnemonicParsing="false" prefHeight="80.0" prefWidth="105.0" styleClass="boton-menu" text="Vías" toggleGroup="$groupLateralMenu" />
+            <ToggleButton layoutX="10.0" layoutY="170.0" mnemonicParsing="false" prefHeight="80.0" prefWidth="105.0" styleClass="boton-menu" text="Educación" toggleGroup="$groupLateralMenu" />
+            <ToggleButton layoutX="10.0" layoutY="250.0" mnemonicParsing="false" prefHeight="80.0" prefWidth="105.0" styleClass="boton-menu" text="Salud" toggleGroup="$groupLateralMenu" />
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>
