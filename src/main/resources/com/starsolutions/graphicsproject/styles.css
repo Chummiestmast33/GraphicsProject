@@ -1,0 +1,75 @@
+/* 1. Fondo general de la ventana */
+.root {
+    -fx-background-color: #E9EEF5; /* Un gris azulado muy claro para que las tarjetas blancas resalten */
+}
+
+/* 2. La tarjeta blanca principal de la derecha */
+.tarjeta-principal {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 20; /* Bordes bien redondeados */
+    /* Sombra suave: color negro al 10% de opacidad, desenfoque de 20 */
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 20, 0, 0, 5);
+}
+
+/* 3. Tarjetas pequeñas internas (Opciones e Imprimir) */
+.tarjeta-secundaria {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.08), 10, 0, 0, 3);
+}
+
+/* 4. Estilo base para los botones del menú lateral (No seleccionados) */
+.boton-menu {
+    -fx-background-color: transparent;
+    -fx-text-fill: #666666;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 15 0 0 15; /* Solo redondea los bordes izquierdos */
+    -fx-cursor: hand;
+}
+
+/* Efecto al pasar el mouse por encima */
+.boton-menu:hover {
+    -fx-background-color: #DDE4EE; /* Un gris un poco más oscurito que el fondo */
+}
+
+/* 5. LA MAGIA: El botón seleccionado (Efecto de unión) */
+.boton-menu:selected {
+    -fx-background-color: #FFFFFF; /* EXACTAMENTE el mismo blanco de la tarjeta principal */
+    -fx-text-fill: #1A2B4C; /* Texto más oscuro para resaltar */
+    /* Sombra desplazada hacia la izquierda (-5 en X) para que NO proyecte sombra sobre la tarjeta blanca, creando la ilusión de que son una sola pieza */
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 15, 0, -5, 5);
+}
+
+/* 6. El botón verde grande de impresión */
+.boton-verde {
+    -fx-background-color: #00703C;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 112, 60, 0.4), 15, 0, 0, 5); /* Sombra color verde */
+}
+
+.boton-verde:hover {
+    -fx-background-color: #00592F;
+}
+
+/* 7. Botones normales (Gráfica, Excel) */
+.boton-normal {
+    -fx-background-color: #F0F3F8;
+    -fx-text-fill: #333333;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 5, 0, 0, 2);
+}
+
+.boton-normal:hover {
+    -fx-background-color: #E2E8F0;
+}
+
+.combo-box{
+    -fx-background-radius: 5;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
