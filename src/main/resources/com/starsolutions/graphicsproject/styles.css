@@ -53,6 +53,7 @@
 
 .boton-verde:hover {
     -fx-background-color: #00592F;
+    -fx-font-size: 18px;
 }
 
 /* 7. Botones normales (Gráfica, Excel) */
@@ -62,6 +63,7 @@
     -fx-background-radius: 8;
     -fx-cursor: hand;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 5, 0, 0, 2);
+    -fx-font-size: 18px;
 }
 
 .boton-normal:hover {
