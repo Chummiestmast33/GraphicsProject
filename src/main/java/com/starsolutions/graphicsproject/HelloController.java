@@ -51,7 +51,7 @@ public class HelloController implements Initializable {
         // 1. Forzar que el panel de la gráfica sea siempre un cuadrado (Ratio 1:1)
         PanelGrafica.prefWidthProperty().bind(PanelGrafica.heightProperty());
         // 2. Inicializar las opciones del ComboBox
-        ComboBoxOpciones.getItems().addAll("Municipal", "Estatal", "Federal");
+        ComboBoxOpciones.getItems().addAll("Municipal", "Estatal", "Federal", "Todos");
         ComboBoxOpciones.getSelectionModel().selectFirst(); // Selecciona "Municipal" por defecto
 
         // 3. Detectar clics en el menú lateral
@@ -74,15 +74,6 @@ public class HelloController implements Initializable {
                     oldValue.setSelected(true);
                 }
             }
-        });
-
-        // 4. Acción para el botón de "Gráfica"
-        BotonGrafica.setOnAction(event -> {
-            String opcionSeleccionada = ComboBoxOpciones.getValue();
-            System.out.println("Generando gráfica: " + opcionSeleccionada + " para " + LabelSeccion.getText());
-
-            // Aquí limpiaremos el panel y agregaremos la gráfica generada por código
-            PanelGrafica.getChildren().clear();
         });
 
         if (groupLateralMenu.getSelectedToggle() != null) {
