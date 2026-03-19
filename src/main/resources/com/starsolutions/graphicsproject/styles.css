@@ -69,7 +69,7 @@
 }
 
 .combo-box{
-    -fx-background-radius: 20;
+    -fx-background-radius: 5;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
 }
