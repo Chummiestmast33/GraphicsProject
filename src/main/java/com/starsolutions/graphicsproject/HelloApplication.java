@@ -8,11 +8,16 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 public class HelloApplication extends Application {
+    private static final double MIN_APP_WIDTH = 1230;
+    private static final double MIN_APP_HEIGHT = 660;
+
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("hello-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 1024, 768);
+        Scene scene = new Scene(fxmlLoader.load(), MIN_APP_WIDTH, Math.max(768, MIN_APP_HEIGHT));
         stage.setTitle("Hello!");
+        stage.setMinWidth(MIN_APP_WIDTH);
+        stage.setMinHeight(MIN_APP_HEIGHT);
         stage.setMaximized(true);
         stage.setScene(scene);
         stage.show();

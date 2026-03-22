@@ -3,9 +3,12 @@ package com.starsolutions.graphicsproject.database;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.nio.file.Path;
 
 public class DatabaseConnection {
-    private static final String DATABASE_URL = "jdbc:sqlite:database.db";
+    private static final String DATABASE_FILE_NAME = "GraphicsProyectSQL.db";
+    private static final String DATABASE_URL = "jdbc:sqlite:" +
+            Path.of(System.getProperty("user.dir"), DATABASE_FILE_NAME).toString();
     private static Connection connection;
 
     /**
@@ -22,7 +25,7 @@ public class DatabaseConnection {
             
             if (connection == null || connection.isClosed()) {
                 connection = DriverManager.getConnection(DATABASE_URL);
-                System.out.println("Conexión establecida a SQLite: " + DATABASE_URL);
+                System.out.println("Conexión establecida a SQLite en: " + DATABASE_URL);
             }
         } catch (ClassNotFoundException e) {
             System.err.println("Error: No se encontró el driver de SQLite");
