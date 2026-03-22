@@ -14,7 +14,6 @@ import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.AreaBreak;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Image;
 import com.itextpdf.layout.element.Paragraph;
@@ -1122,10 +1121,6 @@ public class HelloController implements Initializable {
                     byte[] chartImageBytes = chartImages.get(i);
                     if (chartImageBytes == null || chartImageBytes.length == 0) {
                         continue;
-                    }
-
-                    if (i > 0) {
-                        document.add(new AreaBreak());
                     }
 
                     if (chartImages.size() > 1) {
