@@ -12,7 +12,7 @@
          <children>
             <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="200.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="10.0">
                <children>
-                  <Label text="Nombre de la App">
+                  <Label text="DataMex - ">
                      <font>
                         <Font size="18.0" />
                      </font>
