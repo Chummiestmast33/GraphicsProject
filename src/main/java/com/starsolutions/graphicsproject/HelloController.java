@@ -48,6 +48,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Arc;
 import javafx.scene.shape.ArcType;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import org.knowm.xchart.BitmapEncoder;
@@ -86,33 +87,29 @@ import java.util.ResourceBundle;
 public class HelloController implements Initializable {
     private static final int XCHART_RENDER_SIZE = 1200;
 
-    // --- Parte Superior ---
     @FXML
     private Label LabelSeccion;
+    @FXML
+    private Label labelDatosPoblacion;
 
-    // --- Área Principal ---
     @FXML
     private Pane PanelGrafica;
 
-    // --- Controles de la Derecha ---
     @FXML
     private ComboBox<String> ComboBoxOpciones;
     @FXML
-    private Button BotonGrafica;
+    private ComboBox<String> ComboBoxIdioma;
     @FXML
-    private Button BotonExcel; // Asumo que hiciste la corrección en el FXML para que el ID esté en el botón
+    private Button BotonExcel;
     @FXML
     private Button BotonImpresion;
+    @FXML
+    private Button BotonRestablecer;
 
-    // --- Menú Lateral ---
     @FXML
     private ToggleGroup groupLateralMenu;
     @FXML
     private ToggleButton BottonSeguridad;
-    @FXML
-    private ToggleButton BottonVivienda;
-    @FXML
-    private ToggleButton BottonVias;
     @FXML
     private ToggleButton BottonEducacion;
     @FXML
@@ -122,15 +119,33 @@ public class HelloController implements Initializable {
     private final SeguridadDAO seguridadDAO = new SeguridadDAO();
     private final EducacionDAO educacionDAO = new EducacionDAO();
 
+    private boolean isEnglish = false;
+    private double dragStartX, dragStartY;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         initializeDatabaseIfNeeded();
 
-        ComboBoxOpciones.getItems().addAll("Municipal", "Estatal", "Federal", "Todos");
-        ComboBoxOpciones.getSelectionModel().select("Todos");
-        ComboBoxOpciones.valueProperty().addListener((observable, oldValue, newValue) -> renderCurrentVisualization());
+        ComboBoxIdioma.getItems().addAll("Español", "English");
+        ComboBoxIdioma.getSelectionModel().select("Español");
+        ComboBoxIdioma.valueProperty().addListener((observable, oldValue, newValue) -> {
+            isEnglish = "English".equals(newValue);
+            actualizarTextosUI();
+            renderCurrentVisualization();
+        });
+
+        actualizarTextosUI();
+
+        ComboBoxOpciones.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                renderCurrentVisualization();
+            }
+        });
+
         BotonImpresion.setOnAction(event -> generarReportePdfActual());
         BotonExcel.setOnAction(event -> generarExcelDatosVisibles());
+
+        BotonRestablecer.setOnAction(event -> resetChartTransform());
 
         if (groupLateralMenu.getSelectedToggle() != null) {
             ToggleButton botonInicial = (ToggleButton) groupLateralMenu.getSelectedToggle();
@@ -149,6 +164,128 @@ public class HelloController implements Initializable {
                 }
             }
         });
+
+        Rectangle clip = new Rectangle();
+        clip.widthProperty().bind(PanelGrafica.widthProperty());
+        clip.heightProperty().bind(PanelGrafica.heightProperty());
+        PanelGrafica.setClip(clip);
+
+        PanelGrafica.setOnScroll(event -> {
+            if ("Todos".equalsIgnoreCase(obtenerAmbitoSeleccionado())) {
+                return;
+            }
+            double zoomFactor = 1.05;
+            if (event.getDeltaY() < 0) {
+                zoomFactor = 1 / zoomFactor;
+            }
+            if (!PanelGrafica.getChildren().isEmpty()) {
+                Node content = PanelGrafica.getChildren().get(0);
+                content.setScaleX(content.getScaleX() * zoomFactor);
+                content.setScaleY(content.getScaleY() * zoomFactor);
+            }
+            event.consume();
+        });
+
+        PanelGrafica.setOnMousePressed(event -> {
+            if ("Todos".equalsIgnoreCase(obtenerAmbitoSeleccionado())) {
+                return;
+            }
+            dragStartX = event.getSceneX();
+            dragStartY = event.getSceneY();
+        });
+
+        PanelGrafica.setOnMouseDragged(event -> {
+            if ("Todos".equalsIgnoreCase(obtenerAmbitoSeleccionado())) {
+                return;
+            }
+            if (!PanelGrafica.getChildren().isEmpty()) {
+                Node content = PanelGrafica.getChildren().get(0);
+                content.setTranslateX(content.getTranslateX() + (event.getSceneX() - dragStartX));
+                content.setTranslateY(content.getTranslateY() + (event.getSceneY() - dragStartY));
+                dragStartX = event.getSceneX();
+                dragStartY = event.getSceneY();
+            }
+        });
+    }
+
+    private void resetChartTransform() {
+        if (!PanelGrafica.getChildren().isEmpty()) {
+            Node content = PanelGrafica.getChildren().get(0);
+            content.setScaleX(1.0);
+            content.setScaleY(1.0);
+            content.setTranslateX(0.0);
+            content.setTranslateY(0.0);
+        }
+    }
+
+    private void actualizarTextosUI() {
+        BottonSeguridad.setText(T("Seguridad"));
+        BottonEducacion.setText(T("Educación"));
+        BottonSalud.setText(T("Salud"));
+        labelDatosPoblacion.setText(T("Datos de la Poblacion:"));
+        BotonImpresion.setText(T("Previsualizar Impresion"));
+        BotonRestablecer.setText(T("Restablecer Vista"));
+
+        if (groupLateralMenu.getSelectedToggle() != null) {
+            LabelSeccion.setText(((ToggleButton) groupLateralMenu.getSelectedToggle()).getText());
+        }
+
+        int selectedIndex = ComboBoxOpciones.getSelectionModel().getSelectedIndex();
+        ComboBoxOpciones.getItems().clear();
+        ComboBoxOpciones.getItems().addAll(T("Municipal"), T("Estatal"), T("Federal"), T("Todos"));
+        ComboBoxOpciones.getSelectionModel().select(Math.max(0, selectedIndex));
+    }
+
+    private String T(String text) {
+        if (!isEnglish) return text;
+        switch (text) {
+            case "Seguridad": return "Security";
+            case "Educación": return "Education";
+            case "Salud": return "Health";
+            case "Datos de la Poblacion:": return "Population Data:";
+            case "Previsualizar Impresion": return "Print Preview";
+            case "Restablecer Vista": return "Reset View";
+            case "Municipal": return "Municipal";
+            case "Estatal": return "State";
+            case "Federal": return "Federal";
+            case "Todos": return "All";
+            case "Gobierno": return "Government";
+            case "ONG": return "NGO";
+            case "Sin datos": return "No data";
+            case "Sin información de leyenda.": return "No legend info.";
+            case "Total": return "Total";
+            case "Selecciona una sección del menú lateral.": return "Select a section from the side menu.";
+            case "No hay gráfica disponible para esta sección.": return "No chart available for this section.";
+            case "No hay datos de Salud disponibles.": return "No Health data available.";
+            case "No hay datos de Seguridad disponibles.": return "No Security data available.";
+            case "No hay datos de Educación disponibles.": return "No Education data available.";
+            case "No hay niveles comparables entre Gobierno y ONG en Educación.": return "No comparable levels between Gov and NGO in Education.";
+            case "comparación por clasificación": return "classification comparison";
+            case "polígono comparativo alumnos/docente (Gobierno vs ONG)": return "student/teacher comparative polygon (Gov vs NGO)";
+            case "polígonos separados por ámbito y fuente": return "polygons separated by scope and source";
+            case "Reporte de ": return "Report of ";
+            case "Ámbito: ": return "Scope: ";
+            case "Fecha: ": return "Date: ";
+            case "Categoría": return "Category";
+            case "Diferencia": return "Difference";
+            case "Totales": return "Totals";
+            case "Comparativo de información (Gobierno vs ONG)": return "Information comparison (Gov vs NGO)";
+            case "Resumen de diferencias": return "Summary of differences";
+            case "Diferencia total Gobierno - ONG: ": return "Total Gov - NGO difference: ";
+            case " respecto a ONG). ": return " relative to NGO). ";
+            case "La mayor brecha por categoría se observa en '": return "The largest gap by category is seen in '";
+            case "' con una diferencia de ": return "' with a difference of ";
+            case "El presente PDF contiene un resumen de la sección de ": return "This PDF contains a summary of the section ";
+            case " para el ámbito ": return " for the scope ";
+            case "La información describe el comportamiento de las categorías de salud reportadas por Gobierno y ONG, con enfoque en su participación relativa.": return "The information describes the behavior of health categories reported by Gov and NGO, focusing on their relative participation.";
+            case "La información presenta los indicadores de seguridad por tipo de registro, permitiendo identificar diferencias entre Gobierno y ONG.": return "The information presents security indicators by record type, allowing to identify differences between Gov and NGO.";
+            case "La información resume indicadores educativos y su comparación entre fuentes de Gobierno y ONG en los niveles disponibles.": return "The information summarizes educational indicators and their comparison between Gov and NGO sources.";
+            case "La información muestra la visualización activa para facilitar su análisis y comparación.": return "The information shows the active visualization to facilitate its analysis and comparison.";
+            case "Se presenta la siguiente gráfica del Gobierno, con su distribución de valores por categoría para apoyar el análisis comparativo del ámbito seleccionado.": return "The following Government chart is presented, with its distribution of values by category to support the comparative analysis of the selected scope.";
+            case "Se presenta la siguiente información de una ONG, con una visualización equivalente que permite comparar de forma directa los resultados frente al Gobierno.": return "The following NGO information is presented, with an equivalent visualization that allows direct comparison of results against the Government.";
+            case "Este reporte resume la información visible en el panel actual de la aplicación y conserva la gráfica generada en ese momento para fines de consulta y seguimiento.": return "This report summarizes the information visible in the current application panel and preserves the generated chart for consultation and tracking purposes.";
+            default: return text;
+        }
     }
 
     private void initializeDatabaseIfNeeded() {
@@ -174,25 +311,25 @@ public class HelloController implements Initializable {
     private void renderCurrentVisualization() {
         ToggleButton selected = (ToggleButton) groupLateralMenu.getSelectedToggle();
         if (selected == null) {
-            showMessage("Selecciona una sección del menú lateral.");
+            showMessage(T("Selecciona una sección del menú lateral."));
             return;
         }
 
         String section = selected.getText() == null ? "" : selected.getText().trim().toLowerCase(Locale.ROOT);
 
         try {
-            if (section.contains("segur")) {
+            if (section.contains("segur") || section.contains("secur")) {
                 renderSeguridadChart();
-            } else if (section.contains("salud")) {
+            } else if (section.contains("salud") || section.contains("health")) {
                 renderSaludChart();
             } else if (section.contains("educ")) {
                 renderEducacionChart();
             } else {
-                showMessage("No hay gráfica disponible para esta sección.");
+                showMessage(T("No hay gráfica disponible para esta sección."));
             }
         } catch (Exception e) {
             e.printStackTrace();
-            showMessage("Error al cargar la gráfica de " + selected.getText() + ": " + e.getMessage());
+            showMessage("Error: " + e.getMessage());
         }
     }
 
@@ -208,7 +345,7 @@ public class HelloController implements Initializable {
         List<Salud> ong = saludDAO.obtenerSaludONG(ambito);
 
         if (gobierno.isEmpty() || ong.isEmpty()) {
-            showMessage("No hay datos de Salud disponibles.");
+            showMessage(T("No hay datos de Salud disponibles."));
             return;
         }
 
@@ -216,11 +353,11 @@ public class HelloController implements Initializable {
         Map<String, Long> ongMap = agruparSaludPorCategoria(ong);
 
         setConcentricRingComparisonNode(
-            "Salud (" + ambito + "): comparación por clasificación",
-            gobiernoMap,
-            ongMap,
-            "Gobierno",
-            "ONG"
+                T("Salud") + " (" + T(ambito) + "): " + T("comparación por clasificación"),
+                gobiernoMap,
+                ongMap,
+                T("Gobierno"),
+                T("ONG")
         );
     }
 
@@ -235,16 +372,16 @@ public class HelloController implements Initializable {
                 continue;
             }
             content.getChildren().add(createComparisonSectionNode(
-                "Salud (" + ambito + "): comparación por clasificación",
-                gobiernoMap,
-                ongMap,
-                "Gobierno",
-                "ONG"
+                    T("Salud") + " (" + T(ambito) + "): " + T("comparación por clasificación"),
+                    gobiernoMap,
+                    ongMap,
+                    T("Gobierno"),
+                    T("ONG")
             ));
         }
 
         if (content.getChildren().isEmpty()) {
-            showMessage("No hay datos de Salud disponibles.");
+            showMessage(T("No hay datos de Salud disponibles."));
             return;
         }
 
@@ -264,7 +401,7 @@ public class HelloController implements Initializable {
         List<Seguridad> ong = seguridadDAO.obtenerSeguridadONG(ambito);
 
         if (gobierno.isEmpty() || ong.isEmpty()) {
-            showMessage("No hay datos de Seguridad disponibles.");
+            showMessage(T("No hay datos de Seguridad disponibles."));
             return;
         }
 
@@ -272,11 +409,11 @@ public class HelloController implements Initializable {
         Map<String, Integer> ongMap = agruparSeguridadPorDelito(ong);
 
         setConcentricRingComparisonNode(
-            "Seguridad (" + ambito + "): comparación por clasificación",
-            gobiernoMap,
-            ongMap,
-            "Gobierno",
-            "ONG"
+                T("Seguridad") + " (" + T(ambito) + "): " + T("comparación por clasificación"),
+                gobiernoMap,
+                ongMap,
+                T("Gobierno"),
+                T("ONG")
         );
     }
 
@@ -291,16 +428,16 @@ public class HelloController implements Initializable {
                 continue;
             }
             content.getChildren().add(createComparisonSectionNode(
-                "Seguridad (" + ambito + "): comparación por clasificación",
-                gobiernoMap,
-                ongMap,
-                "Gobierno",
-                "ONG"
+                    T("Seguridad") + " (" + T(ambito) + "): " + T("comparación por clasificación"),
+                    gobiernoMap,
+                    ongMap,
+                    T("Gobierno"),
+                    T("ONG")
             ));
         }
 
         if (content.getChildren().isEmpty()) {
-            showMessage("No hay datos de Seguridad disponibles.");
+            showMessage(T("No hay datos de Seguridad disponibles."));
             return;
         }
 
@@ -314,7 +451,6 @@ public class HelloController implements Initializable {
                                                  String gobiernoLabel,
                                                  String ongLabel) {
         VBox container = createComparisonSectionNode(titleText, gobiernoMap, ongMap, gobiernoLabel, ongLabel);
-
         setPanelContent(container);
     }
 
@@ -392,19 +528,19 @@ public class HelloController implements Initializable {
         legendScroll.setMinHeight(110);
         legendScroll.setPrefHeight(140);
         legendScroll.setStyle(
-            "-fx-control-inner-background: #FFFFFF;" +
-            "-fx-background: #FFFFFF;" +
-            "-fx-background-color: #FFFFFF;" +
-            "-fx-background-radius: 8;" +
-            "-fx-border-color: #E2E8F0;" +
-            "-fx-border-radius: 8;"
+                "-fx-control-inner-background: #FFFFFF;" +
+                        "-fx-background: #FFFFFF;" +
+                        "-fx-background-color: #FFFFFF;" +
+                        "-fx-background-radius: 8;" +
+                        "-fx-border-color: #E2E8F0;" +
+                        "-fx-border-radius: 8;"
         );
 
         List<Map.Entry<String, Double>> entries = sanitizeAndSortEntries(values);
         double total = entries.stream().mapToDouble(Map.Entry::getValue).sum();
 
         if (entries.isEmpty() || total <= 0) {
-            Label empty = new Label("Sin datos");
+            Label empty = new Label(T("Sin datos"));
             empty.setStyle("-fx-font-size: 13px; -fx-text-fill: #64748B;");
             ringPane.getChildren().setAll(empty);
         } else {
@@ -412,7 +548,7 @@ public class HelloController implements Initializable {
             drawingPane.setMinSize(240, 240);
             drawingPane.setPrefSize(280, 280);
 
-            Label centerValue = new Label(String.format(Locale.ROOT, "Total\n%,.0f", total));
+            Label centerValue = new Label(String.format(Locale.ROOT, T("Total") + "\n%,.0f", total));
             centerValue.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-alignment: center; -fx-text-fill: #334155;");
 
             Color[] palette = ringPalette();
@@ -444,8 +580,8 @@ public class HelloController implements Initializable {
                 base.centerXProperty().bind(drawingPane.widthProperty().divide(2));
                 base.centerYProperty().bind(drawingPane.heightProperty().divide(2));
                 base.radiusProperty().bind(
-                    Bindings.min(drawingPane.widthProperty(), drawingPane.heightProperty()).divide(2.9)
-                        .subtract(i * (ringThickness + ringGap))
+                        Bindings.min(drawingPane.widthProperty(), drawingPane.heightProperty()).divide(2.9)
+                                .subtract(i * (ringThickness + ringGap))
                 );
 
                 arc.centerXProperty().bind(drawingPane.widthProperty().divide(2));
@@ -456,11 +592,11 @@ public class HelloController implements Initializable {
                 drawingPane.getChildren().addAll(base, arc);
 
                 String detailLine = String.format(
-                    Locale.ROOT,
-                    "%s: %,.0f (%.1f%%)",
-                    entry.getKey(),
-                    entry.getValue(),
-                    ratio * 100
+                        Locale.ROOT,
+                        "%s: %,.0f (%.1f%%)",
+                        T(entry.getKey()),
+                        entry.getValue(),
+                        ratio * 100
                 );
 
                 Text bullet = new Text("● ");
@@ -481,7 +617,7 @@ public class HelloController implements Initializable {
         }
 
         if (legendBox.getChildren().isEmpty()) {
-            Label emptyLegend = new Label("Sin información de leyenda.");
+            Label emptyLegend = new Label(T("Sin información de leyenda."));
             emptyLegend.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748B;");
             legendBox.getChildren().add(emptyLegend);
         }
@@ -492,7 +628,7 @@ public class HelloController implements Initializable {
         VBox.setVgrow(ringPane, Priority.ALWAYS);
         VBox.setVgrow(legendScroll, Priority.ALWAYS);
         card.setStyle("-fx-background-color: #FFFFFF; -fx-background-radius: 12; -fx-padding: 10; " +
-            "-fx-border-color: #E2E8F0; -fx-border-radius: 12;");
+                "-fx-border-color: #E2E8F0; -fx-border-radius: 12;");
         return card;
     }
 
@@ -511,12 +647,12 @@ public class HelloController implements Initializable {
 
     private Color[] ringPalette() {
         return new Color[] {
-            Color.web("#2563EB"),
-            Color.web("#F97316"),
-            Color.web("#14B8A6"),
-            Color.web("#A855F7"),
-            Color.web("#E11D48"),
-            Color.web("#06B6D4")
+                Color.web("#2563EB"),
+                Color.web("#F97316"),
+                Color.web("#14B8A6"),
+                Color.web("#A855F7"),
+                Color.web("#E11D48"),
+                Color.web("#06B6D4")
         };
     }
 
@@ -532,7 +668,7 @@ public class HelloController implements Initializable {
         List<Educacion> ong = agruparEducacionPorNivel(educacionDAO.obtenerEducacionONG(ambito));
 
         if (gobierno.isEmpty() || ong.isEmpty()) {
-            showMessage("No hay datos de Educación disponibles.");
+            showMessage(T("No hay datos de Educación disponibles."));
             return;
         }
 
@@ -554,20 +690,20 @@ public class HelloController implements Initializable {
             double ratioGobierno = alumnosPorDocente(eGobierno);
             double ratioOng = alumnosPorDocente(eOng);
 
-            niveles.add(eGobierno.getNivelEducativo());
+            niveles.add(T(eGobierno.getNivelEducativo()));
             valoresGobierno.add(ratioGobierno);
             valoresOng.add(ratioOng);
         }
 
         if (niveles.isEmpty()) {
-            showMessage("No hay niveles comparables entre Gobierno y ONG en Educación.");
+            showMessage(T("No hay niveles comparables entre Gobierno y ONG en Educación."));
             return;
         }
 
         RadarChart radarChart = new RadarChartBuilder()
-            .width(XCHART_RENDER_SIZE)
-            .height(XCHART_RENDER_SIZE)
-            .build();
+                .width(XCHART_RENDER_SIZE)
+                .height(XCHART_RENDER_SIZE)
+                .build();
 
         configurarEstiloRadarConTextoGrande(radarChart);
 
@@ -580,13 +716,13 @@ public class HelloController implements Initializable {
         double[] serieGobiernoValues = normalizeToUnitRange(serieGobiernoValuesRaw, maxValue);
         double[] serieOngValues = normalizeToUnitRange(serieOngValuesRaw, maxValue);
 
-        RadarSeries serieGobierno = radarChart.addSeries("Gobierno", serieGobiernoValues, etiquetas);
+        RadarSeries serieGobierno = radarChart.addSeries(T("Gobierno"), serieGobiernoValues, etiquetas);
         serieGobierno.setLineColor(new java.awt.Color(29, 53, 87, 210));
         serieGobierno.setLineWidth(2.6f);
         serieGobierno.setMarker(SeriesMarkers.CIRCLE);
         serieGobierno.setMarkerColor(new java.awt.Color(29, 53, 87, 230));
 
-        RadarSeries serieOng = radarChart.addSeries("ONG", serieOngValues, etiquetas);
+        RadarSeries serieOng = radarChart.addSeries(T("ONG"), serieOngValues, etiquetas);
         serieOng.setLineColor(new java.awt.Color(231, 111, 81, 210));
         serieOng.setLineWidth(2.6f);
         serieOng.setMarker(SeriesMarkers.DIAMOND);
@@ -598,7 +734,7 @@ public class HelloController implements Initializable {
         chartImage.setSmooth(true);
 
         setEducacionChartNode(chartImage,
-            "Educación (" + ambito + "): polígono comparativo alumnos/docente (Gobierno vs ONG)");
+                T("Educación") + " (" + T(ambito) + "): " + T("polígono comparativo alumnos/docente (Gobierno vs ONG)"));
     }
 
     private void renderEducacionChartTodosSeparado() {
@@ -611,14 +747,13 @@ public class HelloController implements Initializable {
         List<Educacion> ongMunicipal = agruparEducacionPorNivel(educacionDAO.obtenerEducacionONG("Municipal"));
 
         if (gobFederal.isEmpty() && gobEstatal.isEmpty() && gobMunicipal.isEmpty() &&
-            ongFederal.isEmpty() && ongEstatal.isEmpty() && ongMunicipal.isEmpty()) {
-            showMessage("No hay datos de Educación disponibles.");
+                ongFederal.isEmpty() && ongEstatal.isEmpty() && ongMunicipal.isEmpty()) {
+            showMessage(T("No hay datos de Educación disponibles."));
             return;
         }
 
-        // Mismas aristas para todos: cada nivel educativo base.
         String[] etiquetas = {
-            "Preescolar", "Primaria", "Secundaria", "Media Superior", "Superior"
+                T("Preescolar"), T("Primaria"), T("Secundaria"), T("Media Superior"), T("Superior")
         };
 
         Map<String, Double> gFed = ratioPorNivel(gobFederal);
@@ -628,12 +763,12 @@ public class HelloController implements Initializable {
         Map<String, Double> oEst = ratioPorNivel(ongEstatal);
         Map<String, Double> oMun = ratioPorNivel(ongMunicipal);
 
-        double[] gFedRaw = valoresPorEtiquetas(gFed, etiquetas);
-        double[] gEstRaw = valoresPorEtiquetas(gEst, etiquetas);
-        double[] gMunRaw = valoresPorEtiquetas(gMun, etiquetas);
-        double[] oFedRaw = valoresPorEtiquetas(oFed, etiquetas);
-        double[] oEstRaw = valoresPorEtiquetas(oEst, etiquetas);
-        double[] oMunRaw = valoresPorEtiquetas(oMun, etiquetas);
+        double[] gFedRaw = valoresPorEtiquetas(gFed, new String[]{"Preescolar", "Primaria", "Secundaria", "Media Superior", "Superior"});
+        double[] gEstRaw = valoresPorEtiquetas(gEst, new String[]{"Preescolar", "Primaria", "Secundaria", "Media Superior", "Superior"});
+        double[] gMunRaw = valoresPorEtiquetas(gMun, new String[]{"Preescolar", "Primaria", "Secundaria", "Media Superior", "Superior"});
+        double[] oFedRaw = valoresPorEtiquetas(oFed, new String[]{"Preescolar", "Primaria", "Secundaria", "Media Superior", "Superior"});
+        double[] oEstRaw = valoresPorEtiquetas(oEst, new String[]{"Preescolar", "Primaria", "Secundaria", "Media Superior", "Superior"});
+        double[] oMunRaw = valoresPorEtiquetas(oMun, new String[]{"Preescolar", "Primaria", "Secundaria", "Media Superior", "Superior"});
 
         double maxValue = max(gFedRaw, gEstRaw, gMunRaw, oFedRaw, oEstRaw, oMunRaw);
         double[] gFedNorm = normalizeToUnitRange(gFedRaw, maxValue);
@@ -644,49 +779,49 @@ public class HelloController implements Initializable {
         double[] oMunNorm = normalizeToUnitRange(oMunRaw, maxValue);
 
         RadarChart radarChart = new RadarChartBuilder()
-            .width(XCHART_RENDER_SIZE)
-            .height(XCHART_RENDER_SIZE)
-            .build();
+                .width(XCHART_RENDER_SIZE)
+                .height(XCHART_RENDER_SIZE)
+                .build();
 
         configurarEstiloRadarConTextoGrande(radarChart);
         radarChart.setRadiiLabels(etiquetas);
 
-        RadarSeries serieGFed = radarChart.addSeries("Gobierno Federal", gFedNorm, etiquetas);
+        RadarSeries serieGFed = radarChart.addSeries(T("Gobierno") + " " + T("Federal"), gFedNorm, etiquetas);
         serieGFed.setLineColor(new java.awt.Color(15, 76, 129, 220));
         serieGFed.setLineWidth(2.3f);
         serieGFed.setMarker(SeriesMarkers.CIRCLE);
         serieGFed.setMarkerColor(new java.awt.Color(15, 76, 129, 230));
         serieGFed.setFillColor(new java.awt.Color(15, 76, 129, 45));
 
-        RadarSeries serieGEst = radarChart.addSeries("Gobierno Estatal", gEstNorm, etiquetas);
+        RadarSeries serieGEst = radarChart.addSeries(T("Gobierno") + " " + T("Estatal"), gEstNorm, etiquetas);
         serieGEst.setLineColor(new java.awt.Color(44, 120, 115, 220));
         serieGEst.setLineWidth(2.3f);
         serieGEst.setMarker(SeriesMarkers.SQUARE);
         serieGEst.setMarkerColor(new java.awt.Color(44, 120, 115, 230));
         serieGEst.setFillColor(new java.awt.Color(44, 120, 115, 45));
 
-        RadarSeries serieGMun = radarChart.addSeries("Gobierno Municipal", gMunNorm, etiquetas);
+        RadarSeries serieGMun = radarChart.addSeries(T("Gobierno") + " " + T("Municipal"), gMunNorm, etiquetas);
         serieGMun.setLineColor(new java.awt.Color(87, 159, 43, 220));
         serieGMun.setLineWidth(2.3f);
         serieGMun.setMarker(SeriesMarkers.TRIANGLE_UP);
         serieGMun.setMarkerColor(new java.awt.Color(87, 159, 43, 230));
         serieGMun.setFillColor(new java.awt.Color(87, 159, 43, 45));
 
-        RadarSeries serieOFed = radarChart.addSeries("ONG Federal", oFedNorm, etiquetas);
+        RadarSeries serieOFed = radarChart.addSeries(T("ONG") + " " + T("Federal"), oFedNorm, etiquetas);
         serieOFed.setLineColor(new java.awt.Color(188, 71, 73, 220));
         serieOFed.setLineWidth(2.3f);
         serieOFed.setMarker(SeriesMarkers.DIAMOND);
         serieOFed.setMarkerColor(new java.awt.Color(188, 71, 73, 230));
         serieOFed.setFillColor(new java.awt.Color(188, 71, 73, 45));
 
-        RadarSeries serieOEst = radarChart.addSeries("ONG Estatal", oEstNorm, etiquetas);
+        RadarSeries serieOEst = radarChart.addSeries(T("ONG") + " " + T("Estatal"), oEstNorm, etiquetas);
         serieOEst.setLineColor(new java.awt.Color(224, 122, 95, 220));
         serieOEst.setLineWidth(2.3f);
         serieOEst.setMarker(SeriesMarkers.CROSS);
         serieOEst.setMarkerColor(new java.awt.Color(224, 122, 95, 230));
         serieOEst.setFillColor(new java.awt.Color(224, 122, 95, 45));
 
-        RadarSeries serieOMun = radarChart.addSeries("ONG Municipal", oMunNorm, etiquetas);
+        RadarSeries serieOMun = radarChart.addSeries(T("ONG") + " " + T("Municipal"), oMunNorm, etiquetas);
         serieOMun.setLineColor(new java.awt.Color(242, 188, 46, 220));
         serieOMun.setLineWidth(2.3f);
         serieOMun.setMarker(SeriesMarkers.PLUS);
@@ -699,12 +834,15 @@ public class HelloController implements Initializable {
         chartImage.setSmooth(true);
 
         setEducacionChartNode(chartImage,
-            "Educación (Todos): polígonos separados por ámbito y fuente");
+                T("Educación") + " (" + T("Todos") + "): " + T("polígonos separados por ámbito y fuente"));
     }
 
     private String obtenerAmbitoSeleccionado() {
         String seleccionado = ComboBoxOpciones.getSelectionModel().getSelectedItem();
-        return (seleccionado == null || seleccionado.isBlank()) ? "Todos" : seleccionado;
+        if (seleccionado == null || seleccionado.isBlank()) return "Todos";
+        if (seleccionado.equals("All")) return "Todos";
+        if (seleccionado.equals("State")) return "Estatal";
+        return seleccionado;
     }
 
     private Map<String, Long> agruparSaludPorCategoria(List<Salud> datos) {
@@ -729,14 +867,14 @@ public class HelloController implements Initializable {
             Educacion previo = acumulado.get(registro.getNivelEducativo());
             if (previo == null) {
                 acumulado.put(registro.getNivelEducativo(), new Educacion(
-                    registro.getNivelEducativo(),
-                    registro.getEscuelasPublicas(),
-                    registro.getEscuelasPrivadas(),
-                    registro.getAlumnosHombres(),
-                    registro.getAlumnosMujeres(),
-                    registro.getDocentesHombres(),
-                    registro.getDocentesMujeres(),
-                    registro.getDocentesTotales()
+                        registro.getNivelEducativo(),
+                        registro.getEscuelasPublicas(),
+                        registro.getEscuelasPrivadas(),
+                        registro.getAlumnosHombres(),
+                        registro.getAlumnosMujeres(),
+                        registro.getDocentesHombres(),
+                        registro.getDocentesMujeres(),
+                        registro.getDocentesTotales()
                 ));
                 continue;
             }
@@ -760,10 +898,10 @@ public class HelloController implements Initializable {
         return ratio;
     }
 
-    private double[] valoresPorEtiquetas(Map<String, Double> ratioByNivel, String[] etiquetas) {
-        double[] valores = new double[etiquetas.length];
-        for (int i = 0; i < etiquetas.length; i++) {
-            valores[i] = ratioByNivel.getOrDefault(etiquetas[i], 0.0);
+    private double[] valoresPorEtiquetas(Map<String, Double> ratioByNivel, String[] etiquetasOriginales) {
+        double[] valores = new double[etiquetasOriginales.length];
+        for (int i = 0; i < etiquetasOriginales.length; i++) {
+            valores[i] = ratioByNivel.getOrDefault(etiquetasOriginales[i], 0.0);
         }
         return valores;
     }
@@ -787,16 +925,16 @@ public class HelloController implements Initializable {
         VBox.setVgrow(chartWrapper, Priority.ALWAYS);
 
         chartImage.fitWidthProperty().bind(
-            Bindings.max(
-                230,
-                Bindings.min(
-                    780,
-                    Bindings.min(
-                        chartWrapper.widthProperty().multiply(0.90),
-                        chartWrapper.heightProperty().multiply(0.90)
-                    )
+                Bindings.max(
+                        230,
+                        Bindings.min(
+                                780,
+                                Bindings.min(
+                                        chartWrapper.widthProperty().multiply(0.90),
+                                        chartWrapper.heightProperty().multiply(0.90)
+                                )
+                        )
                 )
-            )
         );
         chartImage.fitHeightProperty().bind(chartImage.fitWidthProperty());
 
@@ -879,14 +1017,16 @@ public class HelloController implements Initializable {
     }
 
     private void generarReportePdfActual() {
+        resetChartTransform();
+
         ToggleButton selected = (ToggleButton) groupLateralMenu.getSelectedToggle();
-        String seccion = selected == null ? "General" : selected.getText();
-        String ambito = obtenerAmbitoSeleccionado();
+        String seccionOriginal = selected == null ? "General" : selected.getText();
+        String ambitoOriginal = obtenerAmbitoSeleccionado();
 
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Guardar reporte PDF");
+        chooser.setTitle(T("Reporte de ") + seccionOriginal);
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo PDF", "*.pdf"));
-        chooser.setInitialFileName(buildPdfFileName(seccion, ambito));
+        chooser.setInitialFileName(buildPdfFileName(seccionOriginal, ambitoOriginal));
 
         Window owner = PanelGrafica.getScene() != null ? PanelGrafica.getScene().getWindow() : null;
         File outputFile = chooser.showSaveDialog(owner);
@@ -896,11 +1036,10 @@ public class HelloController implements Initializable {
 
         try {
             List<byte[]> chartImages = capturarGraficasActualesComoPng();
-            crearPdfReporte(outputFile, seccion, ambito, chartImages);
-            showMessage("Reporte PDF generado correctamente en:\n" + outputFile.getAbsolutePath());
+            crearPdfReporte(outputFile, seccionOriginal, ambitoOriginal, chartImages);
             openPdfIfPossible(outputFile);
         } catch (Exception e) {
-            showMessage("No se pudo generar el PDF: " + e.getMessage());
+            showMessage("Error: " + e.getMessage());
         }
     }
 
@@ -913,12 +1052,11 @@ public class HelloController implements Initializable {
         Map<String, Double> datosOng = obtenerDatosReportePorSeccion(seccion, ambito, false);
 
         if (datosGobierno.isEmpty() && datosOng.isEmpty()) {
-            showMessage("No hay datos visibles para exportar a Excel.");
             return;
         }
 
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Guardar reporte Excel");
+        chooser.setTitle(T("Reporte de ") + T(seccion));
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Archivo Excel", "*.xlsx"));
         chooser.setInitialFileName(buildExcelFileName(seccion, ambito));
 
@@ -930,18 +1068,17 @@ public class HelloController implements Initializable {
 
         try {
             crearExcelReporte(outputFile, seccion, ambito, datosGobierno, datosOng);
-            showMessage("Archivo Excel generado correctamente en:\n" + outputFile.getAbsolutePath());
             openPdfIfPossible(outputFile);
         } catch (Exception e) {
-            showMessage("No se pudo generar el Excel: " + e.getMessage());
+            showMessage("Error: " + e.getMessage());
         }
     }
 
     private String buildExcelFileName(String seccion, String ambito) {
-        String safeSeccion = sanitizeFilePart(seccion);
-        String safeAmbito = sanitizeFilePart(ambito);
+        String safeSeccion = sanitizeFilePart(T(seccion));
+        String safeAmbito = sanitizeFilePart(T(ambito));
         String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd_HHmm").format(LocalDateTime.now());
-        return "Reporte_" + safeSeccion + "_" + safeAmbito + "_" + timestamp + ".xlsx";
+        return "Report_" + safeSeccion + "_" + safeAmbito + "_" + timestamp + ".xlsx";
     }
 
     private void crearExcelReporte(File outputFile,
@@ -950,23 +1087,23 @@ public class HelloController implements Initializable {
                                    Map<String, Double> datosGobierno,
                                    Map<String, Double> datosOng) throws IOException {
         try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("Reporte");
+            Sheet sheet = workbook.createSheet(T("Reporte"));
 
             int rowIndex = 0;
             Row titleRow = sheet.createRow(rowIndex++);
-            titleRow.createCell(0).setCellValue("Reporte de " + seccion + " - " + ambito);
+            titleRow.createCell(0).setCellValue(T("Reporte de ") + T(seccion) + " - " + T(ambito));
 
             Row dateRow = sheet.createRow(rowIndex++);
-            dateRow.createCell(0).setCellValue("Fecha: " +
-                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").format(LocalDateTime.now()));
+            dateRow.createCell(0).setCellValue(T("Fecha: ") +
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").format(LocalDateTime.now()));
 
             rowIndex++;
 
             Row header = sheet.createRow(rowIndex++);
-            header.createCell(0).setCellValue("Categoría");
-            header.createCell(1).setCellValue("Gobierno");
-            header.createCell(2).setCellValue("ONG");
-            header.createCell(3).setCellValue("Diferencia");
+            header.createCell(0).setCellValue(T("Categoría"));
+            header.createCell(1).setCellValue(T("Gobierno"));
+            header.createCell(2).setCellValue(T("ONG"));
+            header.createCell(3).setCellValue(T("Diferencia"));
 
             List<String> categorias = combinarCategorias(datosGobierno, datosOng);
             double totalGobierno = 0;
@@ -978,7 +1115,7 @@ public class HelloController implements Initializable {
                 double diferencia = valorGobierno - valorOng;
 
                 Row row = sheet.createRow(rowIndex++);
-                row.createCell(0).setCellValue(categoria);
+                row.createCell(0).setCellValue(T(categoria));
                 row.createCell(1).setCellValue(valorGobierno);
                 row.createCell(2).setCellValue(valorOng);
                 row.createCell(3).setCellValue(diferencia);
@@ -989,7 +1126,7 @@ public class HelloController implements Initializable {
 
             rowIndex++;
             Row totals = sheet.createRow(rowIndex++);
-            totals.createCell(0).setCellValue("Totales");
+            totals.createCell(0).setCellValue(T("Totales"));
             totals.createCell(1).setCellValue(totalGobierno);
             totals.createCell(2).setCellValue(totalOng);
             totals.createCell(3).setCellValue(totalGobierno - totalOng);
@@ -1005,10 +1142,10 @@ public class HelloController implements Initializable {
     }
 
     private String buildPdfFileName(String seccion, String ambito) {
-        String safeSeccion = sanitizeFilePart(seccion);
-        String safeAmbito = sanitizeFilePart(ambito);
+        String safeSeccion = sanitizeFilePart(T(seccion));
+        String safeAmbito = sanitizeFilePart(T(ambito));
         String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd_HHmm").format(LocalDateTime.now());
-        return "Reporte_" + safeSeccion + "_" + safeAmbito + "_" + timestamp + ".pdf";
+        return "Report_" + safeSeccion + "_" + safeAmbito + "_" + timestamp + ".pdf";
     }
 
     private String sanitizeFilePart(String value) {
@@ -1016,9 +1153,9 @@ public class HelloController implements Initializable {
             return "General";
         }
         return value
-            .replaceAll("[\\\\/:*?\"<>|]", "")
-            .trim()
-            .replace(' ', '_');
+                .replaceAll("[\\\\/:*?\"<>|]", "")
+                .trim()
+                .replace(' ', '_');
     }
 
     private byte[] capturarNodoComoPng(Node node) throws IOException {
@@ -1082,33 +1219,29 @@ public class HelloController implements Initializable {
 
             document.setMargins(40, 40, 40, 40);
 
-            Paragraph titulo = new Paragraph("Reporte de " + seccion)
-                .setBold()
-                .setFontSize(18)
-                .setFontColor(ColorConstants.DARK_GRAY)
-                .setTextAlignment(TextAlignment.CENTER);
+            Paragraph titulo = new Paragraph(T("Reporte de ") + T(seccion))
+                    .setBold()
+                    .setFontSize(18)
+                    .setFontColor(ColorConstants.DARK_GRAY)
+                    .setTextAlignment(TextAlignment.CENTER);
 
-            Paragraph subtitulo = new Paragraph("Ámbito: " + ambito + "  |  Fecha: " +
-                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").format(LocalDateTime.now()))
-                .setFontSize(11)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setFontColor(ColorConstants.GRAY);
+            Paragraph subtitulo = new Paragraph(T("Ámbito: ") + T(ambito) + "  |  " + T("Fecha: ") +
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").format(LocalDateTime.now()))
+                    .setFontSize(11)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFontColor(ColorConstants.GRAY);
 
             Paragraph descripcionGeneral = new Paragraph(buildDescripcionGeneral(seccion, ambito))
-                .setFontSize(12)
-                .setMarginTop(16)
-                .setMarginBottom(8)
-                .setMultipliedLeading(1.25f);
+                    .setFontSize(12)
+                    .setMarginTop(16)
+                    .setMarginBottom(8)
+                    .setMultipliedLeading(1.25f);
 
-            Paragraph introGobierno = new Paragraph(
-                "Se presenta la siguiente gráfica del Gobierno, con su distribución de valores por categoría " +
-                "para apoyar el análisis comparativo del ámbito seleccionado."
-            ).setFontSize(11).setMarginTop(8).setMarginBottom(6);
+            Paragraph introGobierno = new Paragraph(T("Se presenta la siguiente gráfica del Gobierno, con su distribución de valores por categoría para apoyar el análisis comparativo del ámbito seleccionado."))
+                    .setFontSize(11).setMarginTop(8).setMarginBottom(6);
 
-            Paragraph introOng = new Paragraph(
-                "Se presenta la siguiente información de una ONG, con una visualización equivalente " +
-                "que permite comparar de forma directa los resultados frente al Gobierno."
-            ).setFontSize(11).setMarginTop(4).setMarginBottom(12);
+            Paragraph introOng = new Paragraph(T("Se presenta la siguiente información de una ONG, con una visualización equivalente que permite comparar de forma directa los resultados frente al Gobierno."))
+                    .setFontSize(11).setMarginTop(4).setMarginBottom(12);
 
             document.add(titulo);
             document.add(subtitulo);
@@ -1124,11 +1257,11 @@ public class HelloController implements Initializable {
                     }
 
                     if (chartImages.size() > 1) {
-                        document.add(new Paragraph("Gráfica " + (i + 1))
-                            .setBold()
-                            .setFontSize(12)
-                            .setMarginTop(4)
-                            .setMarginBottom(6));
+                        document.add(new Paragraph("Grafica " + (i + 1))
+                                .setBold()
+                                .setFontSize(12)
+                                .setMarginTop(4)
+                                .setMarginBottom(6));
                     }
 
                     ImageData imageData = ImageDataFactory.create(chartImageBytes);
@@ -1144,42 +1277,37 @@ public class HelloController implements Initializable {
             Map<String, Double> datosGobierno = obtenerDatosReportePorSeccion(seccion, ambito, true);
             Map<String, Double> datosOng = obtenerDatosReportePorSeccion(seccion, ambito, false);
             if (!datosGobierno.isEmpty() || !datosOng.isEmpty()) {
-                document.add(new Paragraph("Comparativo de información (Gobierno vs ONG)")
-                    .setBold()
-                    .setFontSize(12)
-                    .setMarginTop(12)
-                    .setMarginBottom(6));
+                document.add(new Paragraph(T("Comparativo de información (Gobierno vs ONG)"))
+                        .setBold()
+                        .setFontSize(12)
+                        .setMarginTop(12)
+                        .setMarginBottom(6));
 
                 agregarTablaComparativa(document, datosGobierno, datosOng);
                 agregarResumenDiferencias(document, datosGobierno, datosOng);
             }
 
-            Paragraph cierre = new Paragraph(
-                "Este reporte resume la información visible en el panel actual de la aplicación " +
-                "y conserva la gráfica generada en ese momento para fines de consulta y seguimiento."
-            ).setFontSize(10).setItalic().setMarginTop(12).setFontColor(ColorConstants.GRAY);
+            Paragraph cierre = new Paragraph(T("Este reporte resume la información visible en el panel actual de la aplicación y conserva la gráfica generada en ese momento para fines de consulta y seguimiento."))
+                    .setFontSize(10).setItalic().setMarginTop(12).setFontColor(ColorConstants.GRAY);
 
             document.add(cierre);
         }
     }
 
     private String buildDescripcionGeneral(String seccion, String ambito) {
-        String base = "El presente PDF contiene un resumen de la sección de " + seccion +
-            " para el ámbito " + ambito + ". ";
+        String base = T("El presente PDF contiene un resumen de la sección de ") + T(seccion) +
+                T(" para el ámbito ") + T(ambito) + ". ";
 
         String detalle;
         String sectionNormalized = seccion == null ? "" : seccion.toLowerCase(Locale.ROOT);
-        if (sectionNormalized.contains("salud")) {
-            detalle = "La información describe el comportamiento de las categorías de salud " +
-                "reportadas por Gobierno y ONG, con enfoque en su participación relativa.";
-        } else if (sectionNormalized.contains("segur")) {
-            detalle = "La información presenta los indicadores de seguridad por tipo de registro, " +
-                "permitiendo identificar diferencias entre Gobierno y ONG.";
+        if (sectionNormalized.contains("salud") || sectionNormalized.contains("health")) {
+            detalle = T("La información describe el comportamiento de las categorías de salud reportadas por Gobierno y ONG, con enfoque en su participación relativa.");
+        } else if (sectionNormalized.contains("segur") || sectionNormalized.contains("secur")) {
+            detalle = T("La información presenta los indicadores de seguridad por tipo de registro, permitiendo identificar diferencias entre Gobierno y ONG.");
         } else if (sectionNormalized.contains("educ")) {
-            detalle = "La información resume indicadores educativos y su comparación entre " +
-                "fuentes de Gobierno y ONG en los niveles disponibles.";
+            detalle = T("La información resume indicadores educativos y su comparación entre fuentes de Gobierno y ONG en los niveles disponibles.");
         } else {
-            detalle = "La información muestra la visualización activa para facilitar su análisis y comparación.";
+            detalle = T("La información muestra la visualización activa para facilitar su análisis y comparación.");
         }
 
         return base + detalle;
@@ -1188,26 +1316,26 @@ public class HelloController implements Initializable {
     private Map<String, Double> obtenerDatosReportePorSeccion(String seccion, String ambito, boolean gobierno) {
         String sectionNormalized = seccion == null ? "" : seccion.toLowerCase(Locale.ROOT);
 
-        if (sectionNormalized.contains("salud")) {
+        if (sectionNormalized.contains("salud") || sectionNormalized.contains("health")) {
             List<Salud> datos = gobierno
-                ? saludDAO.obtenerSaludGobierno(ambito)
-                : saludDAO.obtenerSaludONG(ambito);
+                    ? saludDAO.obtenerSaludGobierno(ambito)
+                    : saludDAO.obtenerSaludONG(ambito);
             Map<String, Long> agrupado = agruparSaludPorCategoria(datos);
             return convertirMapaANumerico(agrupado);
         }
 
-        if (sectionNormalized.contains("segur")) {
+        if (sectionNormalized.contains("segur") || sectionNormalized.contains("secur")) {
             List<Seguridad> datos = gobierno
-                ? seguridadDAO.obtenerSeguridadGobierno(ambito)
-                : seguridadDAO.obtenerSeguridadONG(ambito);
+                    ? seguridadDAO.obtenerSeguridadGobierno(ambito)
+                    : seguridadDAO.obtenerSeguridadONG(ambito);
             Map<String, Integer> agrupado = agruparSeguridadPorDelito(datos);
             return convertirMapaANumerico(agrupado);
         }
 
         if (sectionNormalized.contains("educ")) {
             List<Educacion> datos = gobierno
-                ? agruparEducacionPorNivel(educacionDAO.obtenerEducacionGobierno(ambito))
-                : agruparEducacionPorNivel(educacionDAO.obtenerEducacionONG(ambito));
+                    ? agruparEducacionPorNivel(educacionDAO.obtenerEducacionGobierno(ambito))
+                    : agruparEducacionPorNivel(educacionDAO.obtenerEducacionONG(ambito));
             return ratioPorNivel(datos);
         }
 
@@ -1238,10 +1366,10 @@ public class HelloController implements Initializable {
         Table table = new Table(UnitValue.createPercentArray(new float[] {4, 2, 2, 2}));
         table.setWidth(UnitValue.createPercentValue(100));
 
-        table.addHeaderCell(new Cell().add(new Paragraph("Categoría").setBold()));
-        table.addHeaderCell(new Cell().add(new Paragraph("Gobierno").setBold()));
-        table.addHeaderCell(new Cell().add(new Paragraph("ONG").setBold()));
-        table.addHeaderCell(new Cell().add(new Paragraph("Diferencia").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph(T("Categoría")).setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph(T("Gobierno")).setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph(T("ONG")).setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph(T("Diferencia")).setBold()));
 
         List<String> categorias = combinarCategorias(datosGobierno, datosOng);
         for (String categoria : categorias) {
@@ -1249,7 +1377,7 @@ public class HelloController implements Initializable {
             double valorOng = datosOng.getOrDefault(categoria, 0.0);
             double diferencia = valorGobierno - valorOng;
 
-            table.addCell(new Cell().add(new Paragraph(categoria)));
+            table.addCell(new Cell().add(new Paragraph(T(categoria))));
             table.addCell(new Cell().add(new Paragraph(formatNumber(valorGobierno))).setTextAlignment(TextAlignment.RIGHT));
             table.addCell(new Cell().add(new Paragraph(formatNumber(valorOng))).setTextAlignment(TextAlignment.RIGHT));
             table.addCell(new Cell().add(new Paragraph(formatSigned(diferencia))).setTextAlignment(TextAlignment.RIGHT));
@@ -1291,21 +1419,21 @@ public class HelloController implements Initializable {
         double diferenciaTotal = totalGobierno - totalOng;
         double porcentajeVsOng = totalOng == 0 ? 0 : (diferenciaTotal / totalOng) * 100;
 
-        String resumen = "Diferencia total Gobierno - ONG: " + formatSigned(diferenciaTotal) +
-            " (" + formatSigned(porcentajeVsOng) + "% respecto a ONG). " +
-            "La mayor brecha por categoría se observa en '" + categoriaMayorBrecha +
-            "' con una diferencia de " + formatSigned(brechaFirmadaMayor) + ".";
+        String resumen = T("Diferencia total Gobierno - ONG: ") + formatSigned(diferenciaTotal) +
+                " (" + formatSigned(porcentajeVsOng) + "%" + T(" respecto a ONG). ") +
+                T("La mayor brecha por categoría se observa en '") + T(categoriaMayorBrecha) +
+                T("' con una diferencia de ") + formatSigned(brechaFirmadaMayor) + ".";
 
-        document.add(new Paragraph("Resumen de diferencias")
-            .setBold()
-            .setFontSize(11)
-            .setMarginTop(8)
-            .setMarginBottom(4));
+        document.add(new Paragraph(T("Resumen de diferencias"))
+                .setBold()
+                .setFontSize(11)
+                .setMarginTop(8)
+                .setMarginBottom(4));
 
         document.add(new Paragraph(resumen)
-            .setFontSize(10.5f)
-            .setMultipliedLeading(1.2f)
-            .setMarginBottom(4));
+                .setFontSize(10.5f)
+                .setMultipliedLeading(1.2f)
+                .setMarginBottom(4));
     }
 
     private String formatNumber(double value) {
@@ -1322,7 +1450,6 @@ public class HelloController implements Initializable {
                 Desktop.getDesktop().open(pdfFile);
             }
         } catch (Exception ignored) {
-            // Si no se puede abrir automáticamente, el archivo ya quedó guardado.
         }
     }
 }
