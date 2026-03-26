@@ -48,7 +48,7 @@ import java.util.List;
 
 SaludDAO saludDAO = new SaludDAO();
 
-// Obtener todos los datos de Salud_Gobierno
+// Obtener todos los datos de Salud_Gobierno_Torreon
 List<Salud> datos = saludDAO.obtenerSaludGobierno();
 for (Salud salud : datos) {
     System.out.println(salud);
@@ -70,10 +70,10 @@ import java.util.List;
 
 SeguridadDAO seguridadDAO = new SeguridadDAO();
 
-// Obtener todos los datos de Seguridad_Gobierno_Coahuila
+// Obtener todos los datos de Seguridad_Gobierno_Torreon
 List<Seguridad> datos = seguridadDAO.obtenerSeguridadGobierno();
 
-// Obtener todos los datos de Seguridad_ONG
+// Obtener todos los datos de Seguridad_ONG_Torreon
 List<Seguridad> datosONG = seguridadDAO.obtenerSeguridadONG();
 
 // Obtener datos por año
@@ -123,10 +123,10 @@ SaludDAO saludDAO = new SaludDAO();
 // Crear un nuevo objeto
 Salud nuevoRegistro = new Salud(2024, "Nueva Categoría", 1000000);
 
-// Insertar en Salud_Gobierno
+// Insertar en Salud_Gobierno_Torreon
 boolean exito = saludDAO.insertarSaludGobierno(nuevoRegistro);
 
-// Insertar en Salud_ONG
+// Insertar en Salud_ONG_Torreon
 boolean exito = saludDAO.insertarSaludONG(nuevoRegistro);
 
 if (exito) {
@@ -139,8 +139,8 @@ if (exito) {
 ## Descripción de los DAOs
 
 ### SaludDAO
-- `obtenerSaludGobierno()` - Obtiene todos los registros de Salud_Gobierno
-- `obtenerSaludONG()` - Obtiene todos los registros de Salud_ONG
+- `obtenerSaludGobierno()` - Obtiene todos los registros de Salud_Gobierno_Torreon
+- `obtenerSaludONG()` - Obtiene todos los registros de Salud_ONG_Torreon
 - `obtenerSaludGobiernoPorAnio(int anio)` - Filtra por año
 - `obtenerSaludONGPorAnio(int anio)` - Filtra por año
 - `obtenerSaludGobiernoPorCategoria(String categoria)` - Filtra por categoría
@@ -148,8 +148,8 @@ if (exito) {
 - `insertarSaludONG(Salud salud)` - Inserta un nuevo registro
 
 ### SeguridadDAO
-- `obtenerSeguridadGobierno()` - Obtiene todos los registros de Seguridad_Gobierno_Coahuila
-- `obtenerSeguridadONG()` - Obtiene todos los registros de Seguridad_ONG
+- `obtenerSeguridadGobierno()` - Obtiene todos los registros de Seguridad_Gobierno_Torreon
+- `obtenerSeguridadONG()` - Obtiene todos los registros de Seguridad_ONG_Torreon
 - `obtenerSeguridadGobiernoPorAnio(int anio)` - Filtra por año
 - `obtenerSeguridadONGPorAnio(int anio)` - Filtra por año
 - `obtenerSeguridadGobiernoPorDelito(String tipoDelito)` - Filtra por tipo de delito
@@ -169,7 +169,7 @@ if (exito) {
 
 ## Notas Importantes
 
-1. **Archivo de Base de Datos**: Se crea automáticamente en el directorio raíz como `database.db`
+1. **Archivo de Base de Datos**: Se usa en el directorio raíz el archivo `GraphicsProyectSQL.db`
 2. **Primera Ejecución**: Ejecutar `DatabaseInitializer.initializeDatabse()` para crear las tablas
 3. **Datos Iniciales**: Ejecutar `DatabaseInitializer.insertInitialData()` solo una vez
 4. **Manejo de Errores**: Todos los DAOs incluyen try-catch para manejar excepciones SQL

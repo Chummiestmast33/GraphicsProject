@@ -6,13 +6,13 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="550.0" prefWidth="950.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.starsolutions.graphicsproject.HelloController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="660.0" minWidth="1230.0" prefHeight="660.0" prefWidth="1230.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.starsolutions.graphicsproject.HelloController">
    <children>
       <AnchorPane layoutX="120.0" layoutY="30.0" prefHeight="490.0" prefWidth="800.0" styleClass="tarjeta-principal" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="120.0" AnchorPane.rightAnchor="30.0" AnchorPane.topAnchor="30.0">
          <children>
             <HBox alignment="CENTER_LEFT" prefHeight="60.0" prefWidth="200.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="10.0">
                <children>
-                  <Label text="Nombre de la App">
+                  <Label text="DataMex - ">
                      <font>
                         <Font size="18.0" />
                      </font>
@@ -26,10 +26,16 @@
                      </font>
                   </Label>
                   <Pane HBox.hgrow="ALWAYS" />
+                  <ComboBox fx:id="ComboBoxIdioma" prefHeight="40.0" prefWidth="120.0" promptText="Idioma" stylesheets="@styles.css">
+                     <HBox.margin>
+                        <Insets right="20.0" />
+                     </HBox.margin>
+                  </ComboBox>
                   <ImageView fitHeight="80.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true">
                      <image>
                         <Image url="@icons/Logo.png" />
-                     </image></ImageView>
+                     </image>
+                  </ImageView>
                </children>
                <padding>
                   <Insets left="20.0" right="20.0" />
@@ -40,16 +46,21 @@
             <VBox alignment="CENTER" layoutX="428.0" layoutY="73.0" prefHeight="380.0" prefWidth="364.0" AnchorPane.bottomAnchor="37.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="73.0">
                <children>
 
-                        <Pane prefHeight="180.0" prefWidth="370.0" styleClass="tarjeta-secundaria">
+                  <Pane prefHeight="180.0" prefWidth="370.0" styleClass="tarjeta-secundaria">
                      <children>
-                        <Label layoutX="16.0" layoutY="42.0" text="Datos de la Poblacion:">
+                        <Label fx:id="labelDatosPoblacion" layoutX="16.0" layoutY="32.0" text="Datos de la Poblacion:">
                            <font>
                               <Font size="18.0" />
                            </font>
                         </Label>
-                        <ComboBox fx:id="ComboBoxOpciones" layoutX="14.0" layoutY="90.0" prefHeight="40.0" prefWidth="180.0" promptText="Lista de Opciones" stylesheets="@styles.css" />
+                        <ComboBox fx:id="ComboBoxOpciones" layoutX="14.0" layoutY="75.0" prefHeight="40.0" prefWidth="180.0" promptText="Lista de Opciones" stylesheets="@styles.css" />
 
-                              <!-- ✅ CORREGIDO: fx:id movido del ImageView al Button -->
+                        <Button fx:id="BotonRestablecer" layoutX="14.0" layoutY="125.0" mnemonicParsing="false" prefHeight="30.0" prefWidth="180.0" styleClass="boton-normal" text="Restablecer Vista">
+                           <font>
+                              <Font size="14.0" />
+                           </font>
+                        </Button>
+
                         <Button fx:id="BotonExcel" contentDisplay="TOP" layoutX="230.0" layoutY="30.0" mnemonicParsing="false" prefHeight="120.0" prefWidth="120.0" styleClass="boton-normal" text="Excel">
                            <graphic>
                               <ImageView fitHeight="80.0" fitWidth="80.0" pickOnBounds="true" preserveRatio="true">
@@ -70,7 +81,7 @@
                         <Insets bottom="20.0" />
                      </VBox.margin>
                   </Pane>
-      
+
                   <Pane prefHeight="180.0" prefWidth="370.0" styleClass="tarjeta-secundaria">
                      <children>
                         <Button fx:id="BotonImpresion" contentDisplay="TOP" layoutX="10.0" layoutY="15.0" mnemonicParsing="false" prefHeight="140.0" prefWidth="350.0" styleClass="boton-verde" text="Previsualizar Impresion">
